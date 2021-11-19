@@ -165,6 +165,7 @@ pub fn Client(comptime StateMachine: type, comptime MessageBus: type) type {
             message: *Message,
             message_body_size: usize,
         ) void {
+            // self.register() also sends a request for the first time...
             self.register();
 
             // We will set parent, context, view and checksums only when sending for the first time:
@@ -200,6 +201,10 @@ pub fn Client(comptime StateMachine: type, comptime MessageBus: type) type {
                     return;
                 },
             };
+
+            // couldn't the queue also be empty if all the requests are processed?
+            // is there any harm to also sending parent, context view and checksums etc?
+
 
             // If the queue was empty, then there is no request inflight and we must send this one:
             if (was_empty) self.send_request_for_the_first_time(message);
@@ -324,6 +329,7 @@ pub fn Client(comptime StateMachine: type, comptime MessageBus: type) type {
                 self.view = reply.header.view;
             }
 
+            // can't we also use this t
             self.request_timeout.stop();
 
             if (inflight.message.header.operation == .register) {
@@ -348,6 +354,12 @@ pub fn Client(comptime StateMachine: type, comptime MessageBus: type) type {
         }
 
         fn on_ping_timeout(self: *Self) void {
+            // why .reset() here and .backoff() down there?
+            //
+            // on_request_timeout increments the attempts
+            // which is used to calculate a new 'after'
+            // so it has the effect of extending the timeout each time,
+            // whereas reset just resets the tick count of the timeout
             self.ping_timeout.reset();
 
             const ping = Header{

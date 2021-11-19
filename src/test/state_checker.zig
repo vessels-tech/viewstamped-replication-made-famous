@@ -118,7 +118,7 @@ pub const StateChecker = struct {
                 }
             }
         }
-
+        log.info("BAD STATE for replica:{}", .{ replica});
         @panic("replica transitioned to an invalid state");
     }
 
